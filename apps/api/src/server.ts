@@ -10,7 +10,7 @@ import { rateLimitMiddleware } from './middleware/rateLimit.js';
 import { logger } from './utils/logger.js';
 
 const app = Fastify({
-  logger,
+  loggerInstance: logger,
 });
 
 await app.register(cors, {

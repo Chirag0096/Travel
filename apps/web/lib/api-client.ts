@@ -6,14 +6,22 @@ interface ApiResponse<T> {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-    cache: 'no-store',
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(init?.headers ?? {}),
+      },
+      cache: 'no-store',
+    });
+  } catch (error) {
+    throw new Error(
+      `Network request failed for ${path}. Ensure web and api are running and NEXT_PUBLIC_API_URL is correct.`,
+      { cause: error },
+    );
+  }
 
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);

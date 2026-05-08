@@ -1,5 +1,23 @@
 FROM node:20-alpine
-WORKDIR /app
-COPY . .
-CMD ["sh", "-c", "echo Build web container here"]
 
+WORKDIR /app
+
+RUN corepack enable
+RUN corepack prepare pnpm@9.12.3 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps ./apps
+COPY packages ./packages
+COPY tsconfig.base.json ./
+
+ARG NEXT_PUBLIC_API_URL=https://odyssey-api-415567294720.us-central1.run.app
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
+RUN pnpm install --frozen-lockfile
+RUN pnpm --dir apps/web build
+
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV HOSTNAME=0.0.0.0
+
+CMD ["sh", "-c", "pnpm --dir apps/web start -p ${PORT:-8080} -H 0.0.0.0"]

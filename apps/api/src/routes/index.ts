@@ -9,7 +9,7 @@ import { registerForecastRoutes } from './forecasts.js';
 import { registerCarbonRoutes } from './carbon.js';
 import { registerConflictRoutes } from './conflict-resolve.js';
 
-export async function registerRoutes(app: FastifyInstance): Promise<void> {
+export async function registerRoutes<TApp extends FastifyInstance>(app: TApp): Promise<void> {
   await registerAiPlannerRoutes(app);
   await registerTripRoutes(app);
   await registerDisruptionRoutes(app);

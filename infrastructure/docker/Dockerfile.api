@@ -1,5 +1,19 @@
 FROM node:20-alpine
-WORKDIR /app
-COPY . .
-CMD ["sh", "-c", "echo Build api container here"]
 
+WORKDIR /app
+
+RUN corepack enable
+RUN corepack prepare pnpm@9.12.3 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps ./apps
+COPY packages ./packages
+COPY tsconfig.base.json ./
+
+RUN pnpm install --frozen-lockfile
+
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV HOST=0.0.0.0
+
+CMD ["pnpm", "--dir", "apps/api", "exec", "tsx", "src/server.ts"]
