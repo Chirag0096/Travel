@@ -1,4 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { env } from '../config/env.js';
 
 const DEMO_VIEWER = {
@@ -20,6 +22,31 @@ function parseBearerToken(header: string | undefined): string | null {
   return token.trim();
 }
 
+function canUseFirebaseVerification(): boolean {
+  return Boolean(
+    env.FIREBASE_PROJECT_ID &&
+      env.FIREBASE_CLIENT_EMAIL &&
+      env.FIREBASE_PRIVATE_KEY &&
+      !env.FIREBASE_CLIENT_EMAIL.startsWith('dev@') &&
+      !env.FIREBASE_PRIVATE_KEY.startsWith('dev-'),
+  );
+}
+
+function getFirebaseAuth() {
+  if (!getApps().length) {
+    initializeApp({
+      credential: cert({
+        projectId: env.FIREBASE_PROJECT_ID,
+        clientEmail: env.FIREBASE_CLIENT_EMAIL,
+        privateKey: env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      }),
+      projectId: env.FIREBASE_PROJECT_ID,
+    });
+  }
+
+  return getAuth();
+}
+
 export async function authMiddleware(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   const token = parseBearerToken(request.headers.authorization);
 
@@ -38,9 +65,23 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
     return;
   }
 
-  request.viewer = {
-    id: token,
-    email: 'verified@odyssey.ai',
-    name: 'Verified Traveler',
-  };
+  if (!canUseFirebaseVerification()) {
+    request.viewer = {
+      id: token,
+      email: 'verified@odyssey.ai',
+      name: 'Verified Traveler',
+    };
+    return;
+  }
+
+  try {
+    const decoded = await getFirebaseAuth().verifyIdToken(token);
+    request.viewer = {
+      id: decoded.uid,
+      email: decoded.email,
+      name: decoded.name,
+    };
+  } catch {
+    await reply.code(401).send({ message: 'Invalid authorization token.' });
+  }
 }

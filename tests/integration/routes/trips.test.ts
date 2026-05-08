@@ -110,4 +110,100 @@ describe('API integration: trip and planning flows', () => {
 
     expect(res.statusCode).toBe(400);
   });
+
+  it('returns pulse endpoints payload shape', async () => {
+    const pulse = await app.inject({ method: 'GET', url: '/api/pulse/tokyo-shinjuku' });
+    expect(pulse.statusCode).toBe(200);
+    const pulseBody = pulse.json();
+    expect(pulseBody.data.placeId).toBe('tokyo-shinjuku');
+    expect(pulseBody.data.zones.length).toBeGreaterThan(0);
+
+    const heatmap = await app.inject({
+      method: 'GET',
+      url: '/api/pulse/heatmap?placeId=tokyo-shinjuku',
+    });
+    expect(heatmap.statusCode).toBe(200);
+    expect(heatmap.json().data.type).toBe('FeatureCollection');
+  });
+
+  it('returns profile dna and accepts feedback update', async () => {
+    const dnaRes = await app.inject({ method: 'GET', url: '/api/profile/dna' });
+    expect(dnaRes.statusCode).toBe(200);
+    expect(dnaRes.json().data.dna).toBeDefined();
+
+    const feedbackRes = await app.inject({
+      method: 'POST',
+      url: '/api/profile/feedback',
+      payload: {
+        favoriteCategories: ['culture', 'food'],
+        carbonSensitivity: 0.9,
+        paceSatisfaction: 0.45,
+        spontaneitySignal: 0.62,
+      },
+    });
+    expect(feedbackRes.statusCode).toBe(200);
+    expect(feedbackRes.json().data.archetype).toBeTruthy();
+  });
+
+  it('returns destination match and price forecast payloads', async () => {
+    const destinationRes = await app.inject({
+      method: 'POST',
+      url: '/api/destinations/match',
+    });
+    expect(destinationRes.statusCode).toBe(200);
+    expect(destinationRes.json().data.matches.length).toBeGreaterThan(0);
+
+    const forecastRes = await app.inject({
+      method: 'GET',
+      url: '/api/forecasts/prices?origin=DEL&destination=TYO&travelDate=2026-11-10',
+    });
+    expect(forecastRes.statusCode).toBe(200);
+    expect(forecastRes.json().data.predictedPriceUsd).toBeGreaterThan(0);
+  });
+
+  it('returns carbon compare and conflict resolve payloads', async () => {
+    const carbonRes = await app.inject({
+      method: 'GET',
+      url: '/api/carbon/compare?origin=A&destination=B',
+    });
+    expect(carbonRes.statusCode).toBe(200);
+    expect(carbonRes.json().data.routes.length).toBeGreaterThan(0);
+
+    const tripRes = await app.inject({
+      method: 'POST',
+      url: '/api/trips/plan',
+      payload: {
+        destination: 'Bangkok',
+        startDate: '2026-09-10T00:00:00.000Z',
+        endDate: '2026-09-12T00:00:00.000Z',
+        travelerCount: 2,
+        preferences: {
+          adventure: 0.6,
+          culture: 0.8,
+          comfort: 0.6,
+          sustainability: 0.7,
+          food: 0.8,
+          pace: 0.5,
+        },
+        constraints: {
+          avoidCrowds: false,
+          mobilityRestrictions: false,
+          dietaryRestrictions: [],
+          maxWalkingKm: 10,
+        },
+        collaborators: [],
+        carbonMode: 'balanced',
+      },
+    });
+
+    const itineraryDays = tripRes.json().data.trip.itinerary;
+    const conflictRes = await app.inject({
+      method: 'POST',
+      url: '/api/ai/conflict-resolve',
+      payload: { itineraryDays },
+    });
+
+    expect(conflictRes.statusCode).toBe(200);
+    expect(conflictRes.json().data.summary).toBeTruthy();
+  });
 });
