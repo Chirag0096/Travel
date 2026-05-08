@@ -1,0 +1,13 @@
+pandas
+numpy
+scikit-learn
+xgboost
+tensorflow
+prophet
+stable-baselines3
+torch
+torch-geometric
+sentence-transformers
+fastapi
+uvicorn[standard]
+
