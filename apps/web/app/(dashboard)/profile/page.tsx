@@ -8,12 +8,24 @@ type ProfileResponse = Awaited<ReturnType<typeof apiClient.getProfile>>;
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
-    void apiClient.getProfile().then(setProfile);
+    void apiClient
+      .getProfile()
+      .then((result) => {
+        setProfile(result);
+        setLoadFailed(false);
+      })
+      .catch(() => {
+        setLoadFailed(true);
+      });
   }, []);
 
   if (!profile) {
+    if (loadFailed) {
+      return <div className="glass p-6">Unable to load Travel DNA right now.</div>;
+    }
     return <div className="glass p-6">Loading Travel DNA…</div>;
   }
 

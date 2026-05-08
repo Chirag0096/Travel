@@ -15,13 +15,20 @@ export default function TripDetailPage() {
   const setLatestTrip = useTripStore((state) => state.setLatestTrip);
   const [loading, setLoading] = useState(!trip || trip.id !== params.id);
   const [risk, setRisk] = useState('low');
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     async function loadTrip() {
-      const response = await apiClient.getTrip(params.id);
-      setLatestTrip(response.trip);
-      setRisk(response.liveDisruptionStatus);
-      setLoading(false);
+      try {
+        const response = await apiClient.getTrip(params.id);
+        setLatestTrip(response.trip);
+        setRisk(response.liveDisruptionStatus);
+        setLoadFailed(false);
+      } catch {
+        setLoadFailed(true);
+      } finally {
+        setLoading(false);
+      }
     }
 
     if (!trip || trip.id !== params.id) {
@@ -34,6 +41,9 @@ export default function TripDetailPage() {
   }, [params.id, setLatestTrip, trip]);
 
   if (loading || !trip) {
+    if (loadFailed) {
+      return <div className="glass p-8">Unable to load this trip right now.</div>;
+    }
     return <div className="glass p-8">Loading live trip canvas…</div>;
   }
 

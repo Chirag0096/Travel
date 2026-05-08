@@ -24,6 +24,7 @@ export default function NewTripPage() {
   const setLatestTrip = useTripStore((state) => state.setLatestTrip);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [destination, setDestination] = useState('Bangkok, Thailand');
   const [budget, setBudget] = useState(1200);
   const [selectedMood, setSelectedMood] = useState('😌 Calm');
@@ -52,27 +53,34 @@ export default function NewTripPage() {
 
   async function generateTrip() {
     setLoading(true);
-    const response = await apiClient.planTrip({
-      destination,
-      startDate: new Date('2026-07-12T00:00:00.000Z').toISOString(),
-      endDate: new Date('2026-07-15T00:00:00.000Z').toISOString(),
-      travelerCount: 2,
-      budget,
-      mood: moodVector,
-      preferences,
-      constraints: {
-        avoidCrowds: true,
-        mobilityRestrictions: false,
-        dietaryRestrictions: ['vegetarian'],
-        maxWalkingKm: 8,
-      },
-      collaborators: [],
-      carbonMode: 'balanced',
-    });
+    setErrorMessage(null);
 
-    setLatestTrip(response.trip);
-    setLoading(false);
-    router.push(`/trips/${response.trip.id}`);
+    try {
+      const response = await apiClient.planTrip({
+        destination,
+        startDate: new Date('2026-07-12T00:00:00.000Z').toISOString(),
+        endDate: new Date('2026-07-15T00:00:00.000Z').toISOString(),
+        travelerCount: 2,
+        budget,
+        mood: moodVector,
+        preferences,
+        constraints: {
+          avoidCrowds: true,
+          mobilityRestrictions: false,
+          dietaryRestrictions: ['vegetarian'],
+          maxWalkingKm: 8,
+        },
+        collaborators: [],
+        carbonMode: 'balanced',
+      });
+
+      setLatestTrip(response.trip);
+      router.push(`/trips/${response.trip.id}`);
+    } catch {
+      setErrorMessage('Trip generation failed. Please retry in a moment.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -189,6 +197,11 @@ export default function NewTripPage() {
               >
                 {loading ? 'Generating…' : 'Generate trip'}
               </button>
+              {errorMessage ? (
+                <p aria-live="polite" className="text-sm text-rose-300">
+                  {errorMessage}
+                </p>
+              ) : null}
             </div>
           )}
         </motion.div>

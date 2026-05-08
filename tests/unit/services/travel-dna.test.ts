@@ -17,4 +17,24 @@ describe('TravelDnaService', () => {
       expect(value).toBeLessThanOrEqual(1);
     });
   });
+
+  it('classifies sustainability-heavy culture profile consistently', () => {
+    const service = new TravelDnaService();
+    const archetype = service.classify({
+      ...defaultTravelDNA,
+      culture: 0.95,
+      pace: 0.2,
+      spontaneity: 0.25,
+    });
+
+    expect(archetype).toBe('Sustainable Wanderer');
+  });
+
+  it('returns default profile with archetype and dna', () => {
+    const service = new TravelDnaService();
+    const profile = service.getDefaultProfile();
+
+    expect(profile.dna).toBeDefined();
+    expect(profile.archetype.length).toBeGreaterThan(0);
+  });
 });

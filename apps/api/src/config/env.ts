@@ -17,6 +17,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().default('https://example.upstash.io'),
   ALGOLIA_APP_ID: z.string().default('DEVALGOLIA'),
   ALGOLIA_API_KEY: z.string().default('dev-algolia-key'),
+  ALLOW_ANON_AUTH: z.coerce.boolean().default(true),
 });
 
 const parsed = envSchema.safeParse(process.env);
