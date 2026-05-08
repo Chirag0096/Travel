@@ -1,16 +1,58 @@
-# Byte-compiled / optimized / DLL files
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files — NEVER commit
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Environments
-.env
-.venv
-env/
+*.so
+.Python
 venv/
-ENV/
-env.bak/
-venv.bak/
+env/
+*.egg-info/
+dist/
+.pytest_cache/
 
-# Project files
-promptwar.zip
+# ML artifacts — store in GCS, not git
+*.joblib
+*.pkl
+*.h5
+*.pt
+*.pth
+ml/data/
+ml/artifacts/
+
+# Logs
+*.log
+npm-debug.log*
+pino.log
+
+# OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.local
+.turbo/
