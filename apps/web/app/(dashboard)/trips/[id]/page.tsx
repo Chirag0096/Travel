@@ -6,7 +6,7 @@ import { AlternativesBanner } from '../../../../components/ai/AlternativesBanner
 import { DisruptionAlert } from '../../../../components/ai/DisruptionAlert';
 import { TripMap } from '../../../../components/maps/TripMap';
 import { ItineraryCanvas } from '../../../../components/planning/ItineraryCanvas';
-import { apiClient } from '../../../../lib/api-client';
+import { ApiRequestError, apiClient } from '../../../../lib/api-client';
 import { useTripStore } from '../../../../stores/tripStore';
 
 export default function TripDetailPage() {
@@ -24,7 +24,11 @@ export default function TripDetailPage() {
         setLatestTrip(response.trip);
         setRisk(response.liveDisruptionStatus);
         setLoadFailed(false);
-      } catch {
+      } catch (error) {
+        if (error instanceof ApiRequestError && error.status === 404) {
+          setLoadFailed(true);
+          return;
+        }
         setLoadFailed(true);
       } finally {
         setLoading(false);

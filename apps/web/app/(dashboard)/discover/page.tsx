@@ -15,10 +15,21 @@ type MatchCard = {
 
 export default function DiscoverPage() {
   const [matches, setMatches] = useState<MatchCard[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleMatch() {
-    const response = await apiClient.matchDestination();
-    setMatches(response.matches);
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await apiClient.matchDestination();
+      setMatches(response.matches);
+    } catch {
+      setErrorMessage('Destination matching is unavailable right now. Please retry.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -31,10 +42,16 @@ export default function DiscoverPage() {
         <button
           type="button"
           onClick={handleMatch}
+          disabled={loading}
           className="rounded-full bg-sky-400 px-6 py-3 font-medium text-slate-950"
         >
-          Simulate image analysis
+          {loading ? 'Analyzing…' : 'Simulate image analysis'}
         </button>
+        {errorMessage ? (
+          <p aria-live="polite" className="text-sm text-rose-300">
+            {errorMessage}
+          </p>
+        ) : null}
         <div className="grid gap-4 lg:grid-cols-2">
           {matches.map((match) => (
             <div key={match.id} className="overflow-hidden rounded-3xl border border-white/10">
